@@ -239,9 +239,9 @@ export default function HomePage() {
               <p className="text-sm font-bold tracking-wide text-neutral-900">CRASHSTATS</p>
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight text-neutral-900">Victoria Crash Data</h1>
+              <h1 className="text-xl font-bold leading-tight text-neutral-900">Kingston Crash Data</h1>
               <p className="mt-1 text-sm text-neutral-500 font-medium">
-                Draw a polygon to analyze statistics.
+                Draw a polygon to analyse statistics.
               </p>
             </div>
           </header>
@@ -481,7 +481,7 @@ function SummarySection({ query, hasPolygon }: { query: SummaryQuery; hasPolygon
             <p className="text-blue-100 text-sm font-medium mb-1">Total Crashes</p>
             <p className="text-5xl font-bold tracking-tight">{formatNumber(total)}</p>
             <div className="mt-4 flex items-center gap-2 text-xs font-medium text-blue-200 bg-blue-500/20 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
-                <span>Latest: {latestAccidentDate ?? 'N/A'}</span>
+                <span>Latest: {latestAccidentDate ? formatDate(latestAccidentDate) : 'N/A'}</span>
             </div>
         </div>
         
@@ -538,11 +538,11 @@ function DetailedBreakdown({
 }) {
   return (
     <div className="space-y-8 pt-8 border-t border-neutral-100">
-      <Section title="Speed Zones">
-         <div className="h-48 w-full">
-            <BarChartComponent 
-              data={breakdown.bySpeedZone
-                .map(b => ({ ...b, bucket: formatSpeedZone(b.bucket) }))
+          <Section title="Speed Zones">
+             <div className="h-48 w-full">
+                <BarChartComponent 
+                  data={breakdown.bySpeedZone
+                .map(b => ({ ...b, bucket: formatSpeedZone(b.bucket, false) }))
                 .sort((a, b) => {
                   const valA = parseInt(a.bucket);
                   const valB = parseInt(b.bucket);
@@ -827,12 +827,12 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat().format(value);
 }
 
-function formatSpeedZone(bucket: string | null) {
+function formatSpeedZone(bucket: string | null, includeUnit = true) {
   if (!bucket || bucket === 'Unknown') {
     return bucket ?? 'Unknown';
   }
   if (!Number.isNaN(Number(bucket))) {
-    return `${bucket} km/h`;
+    return includeUnit ? `${bucket} km/h` : `${bucket}`;
   }
   return bucket;
 }
