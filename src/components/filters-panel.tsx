@@ -1,7 +1,9 @@
 'use client';
 
+import { subYears, format } from 'date-fns';
 import { DateRangePicker } from './date-range-picker';
 import { Calendar, AlertCircle, RotateCcw } from 'lucide-react';
+import { getLatestDataDate } from '@/lib/data-meta';
 
 export type FiltersState = {
   dateFrom?: string;
@@ -41,6 +43,27 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
     onChange({ severity: [], dateFrom: undefined, dateTo: undefined });
   };
 
+  const handleLast5Years = () => {
+    const latest = getLatestDataDate();
+    const fiveYearsAgo = subYears(latest, 5);
+    const dateFrom = format(fiveYearsAgo, 'yyyy-MM-dd');
+    const dateTo = format(latest, 'yyyy-MM-dd');
+
+    if (value.dateFrom === dateFrom && value.dateTo === dateTo) {
+      onChange({ ...value, dateFrom: undefined, dateTo: undefined });
+    } else {
+      onChange({ ...value, dateFrom, dateTo });
+    }
+  };
+
+  const isLast5Years = () => {
+    if (!value.dateFrom || !value.dateTo) return false;
+    const latest = getLatestDataDate();
+    const fiveYearsAgo = subYears(latest, 5);
+    return value.dateFrom === format(fiveYearsAgo, 'yyyy-MM-dd') && 
+           value.dateTo === format(latest, 'yyyy-MM-dd');
+  };
+
   const fromDate = value.dateFrom ? new Date(value.dateFrom) : undefined;
   const toDate = value.dateTo ? new Date(value.dateTo) : undefined;
   
@@ -63,11 +86,26 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
 
       {/* Date Range Section */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-sm">
-            <Calendar className="h-3.5 w-3.5 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-sm">
+              <Calendar className="h-3.5 w-3.5 text-white" />
+            </div>
+            <h3 className="text-sm font-bold text-neutral-800 tracking-tight">Date Range</h3>
           </div>
-          <h3 className="text-sm font-bold text-neutral-800 tracking-tight">Date Range</h3>
+          
+          <button
+            type="button"
+            onClick={handleLast5Years}
+            disabled={disabled}
+            className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+              isLast5Years()
+                ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                : 'bg-white text-neutral-500 border-neutral-200 hover:border-neutral-300 hover:text-neutral-700'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            Last 5 Years
+          </button>
         </div>
         <DateRangePicker
           from={fromDate}

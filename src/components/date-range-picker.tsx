@@ -5,6 +5,9 @@ import { format, subMonths, subYears } from 'date-fns';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
+import { getLatestDataDate } from '@/lib/data-meta';
+
+const LATEST_DATA_DATE = getLatestDataDate();
 
 type DateRangePickerProps = {
   from?: Date;
@@ -14,10 +17,10 @@ type DateRangePickerProps = {
 };
 
 const PRESETS = [
-  { label: 'Last 12 Months', getValue: () => ({ from: subMonths(new Date(), 12), to: new Date() }) },
-  { label: 'Last 5 Years', getValue: () => ({ from: subYears(new Date(), 5), to: new Date() }) },
-  { label: 'Last 10 Years', getValue: () => ({ from: subYears(new Date(), 10), to: new Date() }) },
-  { label: 'Since 2012', getValue: () => ({ from: new Date(2012, 0, 1), to: new Date() }) },
+  { label: 'Last 12 Months', getValue: () => ({ from: subMonths(LATEST_DATA_DATE, 12), to: LATEST_DATA_DATE }) },
+  { label: 'Last 5 Years', getValue: () => ({ from: subYears(LATEST_DATA_DATE, 5), to: LATEST_DATA_DATE }) },
+  { label: 'Last 10 Years', getValue: () => ({ from: subYears(LATEST_DATA_DATE, 10), to: LATEST_DATA_DATE }) },
+  { label: 'Since 2012', getValue: () => ({ from: new Date(2012, 0, 1), to: LATEST_DATA_DATE }) },
 ];
 
 type DateField = 'from' | 'to';

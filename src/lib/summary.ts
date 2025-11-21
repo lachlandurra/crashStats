@@ -160,12 +160,12 @@ function buildFilterClause(filters: SummaryFilters | undefined) {
   const params: string[] = [];
 
   if (filters?.dateFrom) {
-    clauses.push("accident_date >= ?");
+    clauses.push("accident_date >= CAST(? AS DATE)");
     params.push(filters.dateFrom);
   }
 
   if (filters?.dateTo) {
-    clauses.push("accident_date <= ?");
+    clauses.push("accident_date <= CAST(? AS DATE)");
     params.push(filters.dateTo);
   }
 
