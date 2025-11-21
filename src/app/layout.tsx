@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "CrashStats",
-  description: "Draw a polygon anywhere in Victoria and inspect crash statistics instantly."
+  description: "Draw a polygon anywhere in Kingston and inspect crash statistics."
 };
 
 export default function RootLayout({
