@@ -83,11 +83,11 @@ export function all<T = Record<string, unknown>>(
 ): Promise<T[]> {
   if (!params.length) {
     return new Promise((resolve, reject) => {
-      connection.all(sql, (error: Error | null | undefined, rows?: T[]) => {
+      connection.all(sql, (error, rows) => {
         if (error) {
           reject(error);
         } else {
-          resolve(rows ?? []);
+          resolve((rows as unknown as T[]) ?? []);
         }
       });
     });
@@ -99,12 +99,12 @@ export function all<T = Record<string, unknown>>(
         reject(prepError);
         return;
       }
-      statement.all(...params, (error: Error | null | undefined, rows?: T[]) => {
+      statement.all(...params, (error, rows) => {
         statement.finalize();
         if (error) {
           reject(error);
         } else {
-          resolve(rows ?? []);
+          resolve((rows as unknown as T[]) ?? []);
         }
       });
     });

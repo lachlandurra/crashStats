@@ -1,6 +1,5 @@
 'use client';
 
-import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from './date-range-picker';
 import { Calendar, AlertCircle, RotateCcw } from 'lucide-react';
 
@@ -30,7 +29,7 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
     onChange({ ...value, severity: next });
   };
 
-  const handleDateRangeChange = (range: DateRange | undefined) => {
+  const handleDateRangeChange = (range: { from?: Date; to?: Date } | undefined) => {
     onChange({
       ...value,
       dateFrom: range?.from ? range.from.toISOString().split('T')[0] : undefined,
