@@ -35,7 +35,16 @@ yarn-error.log*
 
 # vercel
 .vercel
+VERCEL_DEPLOY.md
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# data artifacts
+data/raw.csv
+data/*.duckdb
+!data/crashes.duckdb
+data/meta.tmp.json
+test-results/
+test-data/

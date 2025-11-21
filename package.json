@@ -3,24 +3,44 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "node scripts/dev-server.js",
+    "build": "node scripts/build.js",
+    "postbuild": "node scripts/copy-duckdb.js",
+    "start": "NODE_ENV=production node scripts/dev-server.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "refresh-data": "node scripts/refresh-data.js"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.8",
+    "@turf/boolean-valid": "^7.2.0",
+    "@turf/helpers": "^7.2.0",
+    "@types/geojson": "^7946.0.16",
+    "date-fns": "^4.1.0",
+    "duckdb": "^1.4.2",
+    "lucide-react": "^0.554.0",
+    "maplibre-gl": "^5.12.0",
+    "maplibre-gl-draw": "^1.6.9",
     "next": "16.0.3",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-day-picker": "^9.11.1",
+    "react-dom": "19.2.0",
+    "recharts": "^3.4.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
+    "jsdom": "^25.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.3"
   }
 }
