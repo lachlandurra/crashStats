@@ -785,14 +785,12 @@ function useSummary(polygon: Feature<Polygon | MultiPolygon> | null, bounds: Fea
   });
 }
 
-function useCrashes(polygon: Feature<Polygon | MultiPolygon> | null, bounds: Feature<Polygon> | null, filters: FiltersState) {
+function useCrashes(polygon: Feature<Polygon | MultiPolygon> | null, _bounds: Feature<Polygon> | null, filters: FiltersState) {
   const severityKey = useMemo(() => [...filters.severity].sort().join('|'), [filters.severity]);
   const body = useMemo(() => {
     const payload: Record<string, unknown> = {};
     if (polygon) {
       payload.polygon = polygon;
-    } else if (bounds) {
-      payload.polygon = bounds;
     }
     const sanitizedFilters: FiltersState = {
       severity: filters.severity,
@@ -803,13 +801,10 @@ function useCrashes(polygon: Feature<Polygon | MultiPolygon> | null, bounds: Fea
       payload.filters = sanitizedFilters;
     }
     return payload;
-  }, [polygon, bounds, filters.severity, filters.dateFrom, filters.dateTo]);
-
-  // Create a unique identifier that changes when polygon presence changes
-  const polygonState = polygon ? 'polygon' : 'bounds';
+  }, [polygon, filters.severity, filters.dateFrom, filters.dateTo]);
 
   return useQuery<CrashesResponse, Error>({
-    queryKey: ['crashes', polygonState, polygon ? JSON.stringify(polygon.geometry) : (bounds ? JSON.stringify(bounds.geometry) : 'all'), filters.dateFrom ?? '', filters.dateTo ?? '', severityKey],
+    queryKey: ['crashes', polygon ? 'polygon' : 'all', polygon ? JSON.stringify(polygon.geometry) : 'all', filters.dateFrom ?? '', filters.dateTo ?? '', severityKey],
     queryFn: async () => {
       const response = await fetch('/api/crashes', {
         method: 'POST',

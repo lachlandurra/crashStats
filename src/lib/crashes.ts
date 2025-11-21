@@ -44,7 +44,7 @@ type CrashQueryOptions = {
 };
 
 export async function queryCrashes(options: CrashQueryOptions): Promise<CrashPoint[]> {
-  const limit = Math.min(Math.max(options.limit ?? 2000, 1), 5000);
+  const limit = Math.min(Math.max(options.limit ?? 5000, 1), 5000);
   const { filterSql, filterParams } = buildFilterClause(options.filters);
   const params = options.polygon ? [JSON.stringify(options.polygon.geometry), ...filterParams, limit] : [...filterParams, limit];
 
