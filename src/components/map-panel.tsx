@@ -11,6 +11,10 @@ type MapPanelProps = {
   onBoundsChange?: (feature: Feature<Polygon> | null) => void;
   crashesGeoJson?: FeatureCollection<Point> | null;
   onPointClick?: (data: any) => void;
+  focusArea?: {
+    center: maplibregl.LngLatLike;
+    bounds?: [[number, number], [number, number]];
+  } | null;
 };
 
 const MAP_STYLE =
@@ -36,7 +40,7 @@ const SAMPLE_E2E_POLYGON: Feature<Polygon> = {
   }
 };
 
-export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPointClick }: MapPanelProps) {
+export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPointClick, focusArea }: MapPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const drawRef = useRef<MapLibreGLDraw | null>(null);
@@ -170,6 +174,31 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
     
     addOrUpdateCrashLayer(mapRef.current, crashesGeoJson);
   }, [crashesGeoJson]);
+
+  // Handle external focus requests (search)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || IS_E2E_MODE || !focusArea) return;
+
+    const fly = () => {
+      if (focusArea.bounds) {
+        map.fitBounds(focusArea.bounds, { padding: 40, duration: 800 });
+      } else {
+        map.flyTo({
+          center: focusArea.center,
+          zoom: Math.max(map.getZoom(), 16),
+          essential: true,
+          duration: 800
+        });
+      }
+    };
+
+    if (!map.isStyleLoaded()) {
+      map.once("load", fly);
+    } else {
+      fly();
+    }
+  }, [focusArea]);
 
   // Handle interactions (click, hover)
   useEffect(() => {

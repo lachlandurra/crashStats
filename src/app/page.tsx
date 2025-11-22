@@ -178,6 +178,11 @@ export default function HomePage() {
     severity: string;
     crashes: CrashPoint[];
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; lat: number; lon: number; bbox?: [number, number, number, number] }>>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [focusArea, setFocusArea] = useState<{ center: [number, number]; bounds?: [[number, number], [number, number]] } | null>(null);
 
   // Automatically open stats drawer when a polygon is drawn
   useEffect(() => {
@@ -187,6 +192,76 @@ export default function HomePage() {
       setSelectedPoint(null); // Clear selected point when drawing new polygon
     }
   }, [polygon]);
+
+  const performSearch = async (query: string) => {
+    const term = query.trim();
+    if (!term) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+    setSearchLoading(true);
+    setSearchError(null);
+    console.info('[search] start', term);
+    try {
+      const response = await fetch(`/api/geocode?q=${encodeURIComponent(`${term}, Melbourne, Australia`)}`);
+      if (!response.ok) {
+        throw new Error('Search failed. Please try again.');
+      }
+      const data = await response.json();
+      const rawFeatures = Array.isArray(data) ? data : Array.isArray((data as any)?.features) ? (data as any).features : [];
+      const mapped = rawFeatures
+        .map((item: any, idx: number) => {
+          const center = Array.isArray(item?.center) && item.center.length === 2 ? item.center : [Number(item.lon), Number(item.lat)];
+          const name = item.place_name ?? item.display_name ?? item.text ?? `Result ${idx + 1}`;
+          const lat = Number(center?.[1]);
+          const lon = Number(center?.[0]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+          let bbox: [number, number, number, number] | undefined;
+          if (Array.isArray(item?.bbox) && item.bbox.length === 4) {
+            const [west, south, east, north] = item.bbox.map((n: any) => Number(n));
+            if ([west, south, east, north].every((v) => Number.isFinite(v))) {
+              // store as [south, north, west, east] to match our existing handling
+              bbox = [south, north, west, east];
+            }
+          }
+
+          return {
+            id: typeof item.id === 'string' ? item.id : item.place_id ? String(item.place_id) : String(idx),
+            name,
+            lat,
+            lon,
+            bbox
+          };
+        })
+        .filter(Boolean) as Array<{ id: string; name: string; lat: number; lon: number; bbox?: [number, number, number, number] }>;
+      setSearchResults(mapped);
+      console.info('[search] results', mapped.length);
+    } catch (error) {
+      console.error('geocode_search_error', error);
+      setSearchError(error instanceof Error ? error.message : 'Search failed.');
+    } finally {
+      setSearchLoading(false);
+      console.info('[search] done');
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    performSearch(searchQuery);
+  };
+
+  const handleSelectResult = (result: { lat: number; lon: number; bbox?: [number, number, number, number] }) => {
+    setFocusArea(result.bbox ? {
+      center: [result.lon, result.lat],
+      bounds: [
+        [result.bbox[2], result.bbox[0]], // [west, south]
+        [result.bbox[3], result.bbox[1]]  // [east, north]
+      ]
+    } : { center: [result.lon, result.lat] });
+    setSearchResults([]);
+  };
 
   const summaryQuery = useSummary(polygon, bounds, filters);
   const crashesQuery = useCrashes(polygon, bounds, filters);
@@ -225,6 +300,7 @@ export default function HomePage() {
           onBoundsChange={setBounds} 
           crashesGeoJson={crashGeoJson} 
           onPointClick={handlePointClick}
+          focusArea={focusArea}
         />
       </div>
 
@@ -232,12 +308,12 @@ export default function HomePage() {
       <div className="absolute left-6 top-6 z-10 flex max-w-sm flex-col gap-4 pointer-events-none">
         <div className="pointer-events-auto rounded-2xl bg-white/90 p-5 shadow-xl shadow-neutral-200/50 backdrop-blur-md transition-all hover:bg-white/95 border border-white/20">
           <header className="space-y-2">
-            <div className="flex items-center gap-2.5">
+            {/* <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-lg shadow-blue-600/20">
                 <MapIcon className="h-4 w-4" />
               </div>
               <p className="text-sm font-bold tracking-wide text-neutral-900">CRASHSTATS</p>
-            </div>
+            </div> */}
             <div>
               <h1 className="text-xl font-bold leading-tight text-neutral-900">Kingston Crash Data</h1>
               <p className="mt-1 text-sm text-neutral-500 font-medium">
@@ -245,6 +321,40 @@ export default function HomePage() {
               </p>
             </div>
           </header>
+
+          <form onSubmit={handleSearchSubmit} className="mt-4 space-y-2">
+            <label className="text-xs font-semibold text-neutral-500">Search location</label>
+            <div className="flex gap-2">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="e.g. Golf View Road, Heatherton"
+                className="flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-800 shadow-sm focus:border-blue-400 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={searchLoading}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 disabled:opacity-50"
+              >
+                {searchLoading ? '...' : 'Go'}
+              </button>
+            </div>
+            {searchError && <p className="text-xs text-red-600">{searchError}</p>}
+            {searchResults.length > 0 && (
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-sm">
+                {searchResults.map((result) => (
+                  <button
+                    key={result.id}
+                    type="button"
+                    onClick={() => handleSelectResult(result)}
+                    className="block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50"
+                  >
+                    {result.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </form>
         </div>
 
         {/* Filters Panel */}
