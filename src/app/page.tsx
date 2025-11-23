@@ -183,6 +183,7 @@ export default function HomePage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [focusArea, setFocusArea] = useState<{ center: [number, number]; bounds?: [[number, number], [number, number]] } | null>(null);
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
 
   // Automatically open stats drawer when a polygon is drawn
   useEffect(() => {
@@ -460,30 +461,52 @@ export default function HomePage() {
       )}
 
       {/* Map Legend */}
-      <div className="absolute bottom-6 left-6 z-10 rounded-2xl bg-white/95 shadow-xl shadow-neutral-200/50 backdrop-blur-md border border-white/20 overflow-hidden">
-        <div className="px-4 py-3 border-b border-neutral-100 bg-gradient-to-r from-neutral-50/50 to-transparent">
-          <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Crash Severity</h3>
-        </div>
-        <div className="p-3 space-y-2">
-          <div className="flex items-center gap-2.5">
-            <div className="h-3 w-3 rounded-full bg-[#dc2626] border border-white shadow-sm"></div>
-            <span className="text-xs font-medium text-neutral-700">Fatal accident</span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="h-3 w-3 rounded-full bg-[#ea580c] border border-white shadow-sm"></div>
-            <span className="text-xs font-medium text-neutral-700">Serious injury</span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="h-3 w-3 rounded-full bg-[#f59e0b] border border-white shadow-sm"></div>
-            <span className="text-xs font-medium text-neutral-700">Other injury</span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="h-3 w-3 rounded-full bg-[#10b981] border border-white shadow-sm"></div>
-            <span className="text-xs font-medium text-neutral-700">Non injury</span>
-          </div>
-          <div className="pt-2 mt-2 border-t border-neutral-100">
-            <p className="text-[10px] text-neutral-500 italic">Dot size = crash count at location</p>
-          </div>
+      <div className="absolute bottom-6 left-6 z-10 flex flex-col items-start">
+        <div 
+            className={`rounded-2xl bg-white/95 shadow-xl shadow-neutral-200/50 backdrop-blur-md border border-white/20 overflow-hidden transition-all duration-300 ease-in-out ${isLegendOpen ? 'min-w-[240px]' : 'min-w-0'}`}
+        >
+            <button 
+                onClick={() => setIsLegendOpen(!isLegendOpen)}
+                className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+            >
+                <div className="flex items-center gap-2">
+                    {!isLegendOpen && (
+                       <div className="flex -space-x-1.5">
+                          <div className="h-2.5 w-2.5 rounded-full bg-[#dc2626] ring-1 ring-white"></div>
+                          <div className="h-2.5 w-2.5 rounded-full bg-[#ea580c] ring-1 ring-white"></div>
+                          <div className="h-2.5 w-2.5 rounded-full bg-[#f59e0b] ring-1 ring-white"></div>
+                       </div>
+                    )}
+                    <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                        {isLegendOpen ? 'Crash Severity' : 'Legend'}
+                    </span>
+                </div>
+                <ChevronUp className={`h-4 w-4 text-neutral-400 ml-auto transition-transform duration-300 ${isLegendOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isLegendOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="p-3 pt-0 space-y-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-3 w-3 rounded-full bg-[#dc2626] border border-white shadow-sm"></div>
+                    <span className="text-xs font-medium text-neutral-700">Fatal accident</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-3 w-3 rounded-full bg-[#ea580c] border border-white shadow-sm"></div>
+                    <span className="text-xs font-medium text-neutral-700">Serious injury</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-3 w-3 rounded-full bg-[#f59e0b] border border-white shadow-sm"></div>
+                    <span className="text-xs font-medium text-neutral-700">Other injury</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-3 w-3 rounded-full bg-[#10b981] border border-white shadow-sm"></div>
+                    <span className="text-xs font-medium text-neutral-700">Non injury</span>
+                  </div>
+                  <div className="pt-2 mt-2 border-t border-neutral-100">
+                    <p className="text-[10px] text-neutral-500 italic">Dot size = crash count at location</p>
+                  </div>
+                </div>
+            </div>
         </div>
       </div>
     </main>
