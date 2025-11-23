@@ -75,7 +75,7 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
       {hasActiveFilters && (
         <button
           type="button"
-          className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neutral-50 to-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-all hover:from-neutral-100 hover:to-neutral-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed border border-neutral-200/50"
+          className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neutral-50 to-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-all hover:from-neutral-100 hover:to-neutral-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed border border-neutral-200/50 cursor-pointer"
           onClick={clearFilters}
           disabled={disabled}
         >
@@ -98,7 +98,7 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
             type="button"
             onClick={handleLast5Years}
             disabled={disabled}
-            className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+            className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
               isLast5Years()
                 ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
                 : 'bg-white text-neutral-500 border-neutral-200 hover:border-neutral-300 hover:text-neutral-700'
@@ -131,7 +131,7 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
               <button
                 key={option.label}
                 type="button"
-                className={`group relative overflow-hidden rounded-full border px-3 py-1.5 text-xs font-bold transition-all duration-300 ${
+                className={`group relative overflow-hidden rounded-full border px-3 py-1.5 text-xs font-bold transition-all duration-300 cursor-pointer ${
                   active
                     ? `${option.borderColor} ${option.bgColor} ${option.textColor} shadow-sm`
                     : `border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:text-neutral-900 hover:shadow-sm`

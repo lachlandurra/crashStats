@@ -310,7 +310,7 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
         <button
           type="button"
           data-testid="load-sample-polygon"
-          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 cursor-pointer"
           onClick={() => onPolygonChange(SAMPLE_E2E_POLYGON)}
         >
           Load sample polygon
@@ -328,7 +328,7 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
         {!hasPolygon ? (
           <button
             onClick={handleStartDraw}
-            className={`flex items-center gap-2 rounded-full px-4 py-2.5 font-semibold shadow-lg transition-all ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2.5 font-semibold shadow-lg transition-all cursor-pointer ${
               isDrawing 
                 ? 'bg-blue-600 text-white ring-4 ring-blue-600/20 animate-pulse' 
                 : 'bg-white text-neutral-700 hover:bg-neutral-50'
@@ -340,7 +340,7 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
         ) : (
           <button
             onClick={handleClearDraw}
-            className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 font-semibold text-red-600 shadow-lg transition-all hover:bg-red-50"
+            className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 font-semibold text-red-600 shadow-lg transition-all hover:bg-red-50 cursor-pointer"
           >
             <Trash2 className="h-4 w-4" />
             <span>Clear Area</span>

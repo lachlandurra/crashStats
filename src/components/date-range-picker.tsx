@@ -81,7 +81,7 @@ export function DateRangePicker({ from, to, onSelect, disabled }: DateRangePicke
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`group flex w-full items-center justify-start gap-3 rounded-xl border-2 bg-gradient-to-br from-white to-neutral-50 px-4 py-3 text-sm font-semibold shadow-sm transition-all hover:shadow-md hover:from-neutral-50 hover:to-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`group flex w-full items-center justify-start gap-3 rounded-xl border-2 bg-gradient-to-br from-white to-neutral-50 px-4 py-3 text-sm font-semibold shadow-sm transition-all hover:shadow-md hover:from-neutral-50 hover:to-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
           !hasSelection
             ? 'border-neutral-200 text-neutral-500' 
             : 'border-blue-200 text-neutral-900 bg-gradient-to-br from-blue-50/50 to-white'
@@ -119,7 +119,7 @@ export function DateRangePicker({ from, to, onSelect, disabled }: DateRangePicke
               <button
                 key={preset.label}
                 onClick={() => handlePresetClick(preset)}
-                className="group rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-neutral-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 transition-all border border-transparent hover:border-blue-200 hover:shadow-sm"
+                className="group rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-neutral-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 transition-all border border-transparent hover:border-blue-200 hover:shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-neutral-300 group-hover:bg-blue-500 transition-colors" />
@@ -131,7 +131,7 @@ export function DateRangePicker({ from, to, onSelect, disabled }: DateRangePicke
             {hasSelection && (
               <button
                 onClick={handleClear}
-                className="mt-3 pt-3 border-t border-neutral-200 group rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50 transition-all flex items-center gap-2"
+                className="mt-3 pt-3 border-t border-neutral-200 group rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
                 Clear Selection
@@ -150,7 +150,7 @@ export function DateRangePicker({ from, to, onSelect, disabled }: DateRangePicke
               <button
                 type="button"
                 onClick={() => setActiveField('from')}
-                className={`w-full rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all text-left ${
+                className={`w-full rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all text-left cursor-pointer ${
                   activeField === 'from'
                     ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-sm'
                     : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
@@ -169,7 +169,7 @@ export function DateRangePicker({ from, to, onSelect, disabled }: DateRangePicke
               <button
                 type="button"
                 onClick={() => setActiveField('to')}
-                className={`w-full rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all text-left ${
+                className={`w-full rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all text-left cursor-pointer ${
                   activeField === 'to'
                     ? 'border-indigo-500 bg-indigo-50 text-indigo-900 shadow-sm'
                     : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'

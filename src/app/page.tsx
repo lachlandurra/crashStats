@@ -334,7 +334,7 @@ export default function HomePage() {
               <button
                 type="submit"
                 disabled={searchLoading}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 disabled:opacity-50"
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 disabled:opacity-50 cursor-pointer"
               >
                 {searchLoading ? '...' : 'Go'}
               </button>
@@ -347,7 +347,7 @@ export default function HomePage() {
                     key={result.id}
                     type="button"
                     onClick={() => handleSelectResult(result)}
-                    className="block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50"
+                    className="block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 cursor-pointer"
                   >
                     {result.name}
                   </button>
@@ -375,44 +375,53 @@ export default function HomePage() {
           isStatsOpen ? 'translate-x-0 opacity-100' : 'translate-x-[calc(100%+2rem)] opacity-0'
         }`}
       >
-        <div className="flex items-center justify-between border-b border-neutral-100 p-6">
-          <div className="flex items-center gap-4">
-             <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
-                <button 
-                  onClick={() => toggleView('area')}
-                  className={`p-1 rounded-md transition-all ${viewMode === 'area' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-400 hover:text-neutral-600'}`}
-                  title="Polygon Insights"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button 
-                  onClick={() => toggleView('point')}
-                  className={`p-1 rounded-md transition-all ${viewMode === 'point' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-400 hover:text-neutral-600'}`}
-                  title="Location Details"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-             </div>
-             <div>
-                <h2 className="text-xl font-bold text-neutral-900">{viewMode === 'point' ? 'Point Location Details' : 'Area Insights'}</h2>
-                <p className="text-xs font-medium text-neutral-400 mt-0.5">
-                  {viewMode === 'point'
-                    ? (selectedPoint 
-                        ? `${selectedPoint.count} crash${selectedPoint.count === 1 ? '' : 'es'} at your selected location`
-                        : 'Select a location on the map')
-                    : 'Crash statistics for your selected region'}
-                </p>
-             </div>
+        <div className="flex flex-col gap-4 border-b border-neutral-100 p-6">
+          <div className="flex items-center justify-between">
+            {/* Segmented Control */}
+            <div className="flex p-1 bg-neutral-100/80 rounded-xl border border-neutral-200/50">
+              <button
+                onClick={() => toggleView('area')}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  viewMode === 'area'
+                    ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-black/5'
+                    : 'text-neutral-500 hover:text-neutral-700'
+                }`}
+              >
+                Area Insights
+              </button>
+              <button
+                onClick={() => toggleView('point')}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  viewMode === 'point'
+                    ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-black/5'
+                    : 'text-neutral-500 hover:text-neutral-700'
+                }`}
+              >
+                Point Details
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsStatsOpen(false);
+                // Don't clear selected point so we can come back to it
+              }}
+              className="group rounded-full bg-neutral-100 p-2 transition-colors hover:bg-neutral-200 cursor-pointer"
+            >
+              <X className="h-5 w-5 text-neutral-500 transition-transform group-hover:rotate-90" />
+            </button>
           </div>
-          <button
-            onClick={() => {
-              setIsStatsOpen(false);
-              // Don't clear selected point so we can come back to it
-            }}
-            className="group rounded-full bg-neutral-100 p-2 transition-colors hover:bg-neutral-200"
-          >
-            <X className="h-5 w-5 text-neutral-500 transition-transform group-hover:rotate-90" />
-          </button>
+
+          {/* Context Subtitle */}
+          <div className="px-1">
+             <p className="text-sm font-medium text-neutral-500 animate-in fade-in slide-in-from-left-2 duration-300 key={viewMode}">
+               {viewMode === 'point'
+                 ? (selectedPoint
+                     ? `${selectedPoint.count} crash${selectedPoint.count === 1 ? '' : 'es'} at selected location`
+                     : 'Select a location on the map')
+                 : 'Crash statistics for your selected region'}
+             </p>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
@@ -443,7 +452,7 @@ export default function HomePage() {
       {!isStatsOpen && (
         <button
           onClick={() => setIsStatsOpen(true)}
-          className="absolute bottom-8 right-8 z-10 flex items-center gap-2.5 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-neutral-900/20 transition-all hover:scale-105 hover:bg-neutral-800 active:scale-95"
+          className="absolute bottom-8 right-8 z-10 flex items-center gap-2.5 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-neutral-900/20 transition-all hover:scale-105 hover:bg-neutral-800 active:scale-95 cursor-pointer"
         >
           <TrendingUp className="h-4 w-4" />
           View Insights
@@ -558,7 +567,7 @@ function SummarySection({ query, hasPolygon }: { query: SummaryQuery; hasPolygon
         <p className="text-sm font-medium text-red-800">
             {query.error.message || 'Unable to fetch summary.'}
         </p>
-        <button className="mt-2 text-xs font-bold text-red-600 hover:underline">Try Again</button>
+        <button className="mt-2 text-xs font-bold text-red-600 hover:underline cursor-pointer">Try Again</button>
       </div>
     );
   }
