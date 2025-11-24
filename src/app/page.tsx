@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Feature, FeatureCollection, MultiPolygon, Point, Polygon } from 'geojson';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { ChevronUp, Map as MapIcon, Filter, X, TrendingUp, Users, Car, Bike, Truck, AlertTriangle, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronUp, Map as MapIcon, Filter, X, TrendingUp, Users, Car, Bike, Truck, AlertTriangle, Calendar, Clock, ChevronLeft, ChevronRight, Menu, Search } from 'lucide-react';
 
 import { MapPanel } from '@/components/map-panel';
-import { FiltersPanel, type FiltersState } from '@/components/filters-panel';
+import { type FiltersState } from '@/components/filters-panel';
+import { CompactFilters } from '@/components/compact-filters';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LabelList } from 'recharts';
 
 type SummaryBucket = { bucket: string; count: number };
@@ -167,6 +168,125 @@ function formatDate(dateStr: string | null) {
   }
 }
 
+function AnimatedArrow() {
+  const pathRef = useRef<SVGPathElement>(null);
+  const headRef = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    const path = pathRef.current;
+    const head = headRef.current;
+    if (!path || !head) return;
+
+    const length = path.getTotalLength();
+
+    const updateArrowHead = () => {
+      // Use a slightly larger sampling window so the head follows the final curve direction smoothly
+      const endPoint = path.getPointAtLength(length);
+      const lookBack = Math.min(8, length); // guard very short paths
+      const previousPoint = path.getPointAtLength(Math.max(length - lookBack, 0));
+      const angle = Math.atan2(endPoint.y - previousPoint.y, endPoint.x - previousPoint.x);
+      const headLength = 12;
+      const spread = Math.PI / 6; // 30 degrees spread for the two flares
+
+      const headPoint = (offset: number) => {
+        const theta = angle + Math.PI + offset;
+        return {
+          x: endPoint.x + Math.cos(theta) * headLength,
+          y: endPoint.y + Math.sin(theta) * headLength
+        };
+      };
+
+      const leftPoint = headPoint(spread);
+      const rightPoint = headPoint(-spread);
+
+      head.setAttribute(
+        'd',
+        `M ${endPoint.x} ${endPoint.y} L ${leftPoint.x} ${leftPoint.y} M ${endPoint.x} ${endPoint.y} L ${rightPoint.x} ${rightPoint.y}`
+      );
+    };
+    
+    updateArrowHead();
+    
+    // Reset styles
+    path.style.strokeDasharray = `${length}`;
+    path.style.strokeDashoffset = `${length}`;
+    path.style.opacity = '0';
+    
+    head.style.opacity = '0';
+
+    const duration = 2000;
+    
+    const animate = () => {
+      const start = performance.now();
+      
+      const step = (timestamp: number) => {
+        const elapsed = timestamp - start;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Ease out cubic
+        const ease = 1 - Math.pow(1 - progress, 3);
+        
+        // Animate path drawing
+        path.style.strokeDashoffset = `${length * (1 - ease)}`;
+        path.style.opacity = progress < 0.1 ? `${progress * 10}` : '1';
+        
+        // Animate head appearance near the end
+        if (progress > 0.8) {
+           head.style.opacity = `${(progress - 0.8) * 5}`;
+        } else {
+           head.style.opacity = '0';
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          // Reset and loop after a short pause
+          setTimeout(() => {
+             path.style.strokeDashoffset = `${length}`;
+             path.style.opacity = '0';
+             head.style.opacity = '0';
+             requestAnimationFrame(animate);
+          }, 500);
+        }
+      };
+      
+      requestAnimationFrame(step);
+    };
+
+    const animationId = requestAnimationFrame(animate);
+    
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+
+  return (
+    <svg 
+      width="100%" 
+      height="100%" 
+      viewBox="0 0 100 100" 
+      fill="none" 
+      className="text-blue-600 drop-shadow-md"
+    >
+      {/* Curved line pointing from left up to the right */}
+      <path 
+        ref={pathRef}
+        d="M12 72 C 35 65, 60 50, 90 28" 
+        stroke="currentColor" 
+        strokeWidth="3" 
+        strokeLinecap="round"
+      />
+      {/* Arrowhead */}
+      <path 
+        ref={headRef}
+        d="M10 20 L 22 27 M 10 20 L 17 32" 
+        stroke="currentColor" 
+        strokeWidth="3" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function HomePage() {
   const [polygon, setPolygon] = useState<Feature<Polygon | MultiPolygon> | null>(null);
   const [bounds, setBounds] = useState<Feature<Polygon> | null>(null);
@@ -184,6 +304,23 @@ export default function HomePage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [focusArea, setFocusArea] = useState<{ center: [number, number]; bounds?: [[number, number], [number, number]] } | null>(null);
   const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const [isInstructionDismissed, setIsInstructionDismissed] = useState(false);
+  const instructionStorageKey = 'drawInstructionDismissed';
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = sessionStorage.getItem(instructionStorageKey);
+    if (stored === 'true') {
+      setIsInstructionDismissed(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isInstructionDismissed) {
+      sessionStorage.setItem(instructionStorageKey, 'true');
+    }
+  }, [isInstructionDismissed]);
 
   // Automatically open stats drawer when a polygon is drawn
   useEffect(() => {
@@ -303,71 +440,103 @@ export default function HomePage() {
           onPointClick={handlePointClick}
           focusArea={focusArea}
         />
+        
+        {/* Animated Draw Instruction */}
+        {!polygon && !isInstructionDismissed && (
+          <div className="absolute top-24 right-14 z-20 flex flex-col items-end animate-in fade-in slide-in-from-top-4 duration-700 delay-500 pointer-events-none">
+            <div className="relative mr-4">
+               {/* Drawn Arrow */}
+               <div className="absolute -top-12 right-8 w-24 h-24 pointer-events-none">
+                  <AnimatedArrow />
+               </div>
+
+               {/* Instruction Card */}
+               <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-white/50 shadow-xl shadow-blue-900/10 rounded-2xl p-4 max-w-[280px] transform transition-all hover:scale-105">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-neutral-900 mb-1">Start Here</h3>
+                      <p className="text-xs text-neutral-600 leading-relaxed">
+                        Draw an area on the map to unlock detailed crash insights.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => setIsInstructionDismissed(true)}
+                      className="flex-shrink-0 -mr-1 -mt-1 p-1.5 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+               </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Floating Header / Controls */}
-      <div className="absolute left-6 top-6 z-10 flex max-w-sm flex-col gap-4 pointer-events-none">
-        <div className="pointer-events-auto rounded-2xl bg-white/90 p-5 shadow-xl shadow-neutral-200/50 backdrop-blur-md transition-all hover:bg-white/95 border border-white/20">
-          <header className="space-y-2">
-            {/* <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-                <MapIcon className="h-4 w-4" />
-              </div>
-              <p className="text-sm font-bold tracking-wide text-neutral-900">CRASHSTATS</p>
-            </div> */}
-            <div>
-              <h1 className="text-xl font-bold leading-tight text-neutral-900">Kingston Crash Data</h1>
-              <p className="mt-1 text-sm text-neutral-500 font-medium">
-                Draw a polygon to analyse statistics.
-              </p>
-            </div>
-          </header>
-
-          <form onSubmit={handleSearchSubmit} className="mt-4 space-y-2">
-            <label className="text-xs font-semibold text-neutral-500">Search location</label>
-            <div className="flex gap-2">
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="e.g. Golf View Road, Heatherton"
-                className="flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-800 shadow-sm focus:border-blue-400 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={searchLoading}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 disabled:opacity-50 cursor-pointer"
-              >
-                {searchLoading ? '...' : 'Go'}
-              </button>
-            </div>
-            {searchError && <p className="text-xs text-red-600">{searchError}</p>}
-            {searchResults.length > 0 && (
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-sm">
-                {searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    type="button"
-                    onClick={() => handleSelectResult(result)}
-                    className="block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 cursor-pointer"
-                  >
-                    {result.name}
-                  </button>
-                ))}
-              </div>
-            )}
+      {/* Floating Search Bar */}
+      <div className="absolute left-4 top-4 z-20 w-[calc(100%-2rem)] max-w-md flex flex-col gap-2 pointer-events-none">
+        <div className="pointer-events-auto relative flex items-center w-full bg-white rounded-full shadow-md hover:shadow-lg transition-shadow duration-200 h-12 border border-transparent focus-within:border-blue-100">
+          <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center h-full pl-4">
+            <input 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 py-2 px-2 outline-none text-neutral-700 placeholder-neutral-500 text-base bg-transparent h-full"
+              placeholder="Search location, e.g. Golf View Road, Heatherton" 
+            />
           </form>
+          <div className="flex items-center pr-1">
+              {searchQuery && (
+                  <button 
+                      onClick={() => setSearchQuery('')}
+                      className="p-2 text-neutral-400 hover:text-neutral-600 rounded-full cursor-pointer"
+                  >
+                      <X className="h-4 w-4" />
+                  </button>
+              )}
+              <div className="h-6 w-px bg-neutral-200 mx-1" />
+              <button 
+                  onClick={() => performSearch(searchQuery)}
+                  disabled={searchLoading}
+                  className="p-3 text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer disabled:opacity-50"
+              >
+                  <Search className="h-5 w-5" />
+              </button>
+          </div>
+        </div>
+        
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <div className="pointer-events-auto bg-white rounded-xl shadow-lg border border-neutral-100 overflow-hidden mt-1 max-h-60 overflow-y-auto">
+            {searchResults.map((result) => (
+              <button
+                key={result.id}
+                type="button"
+                onClick={() => handleSelectResult(result)}
+                className="block w-full px-4 py-3 text-left text-sm hover:bg-neutral-50 cursor-pointer border-b border-neutral-50 last:border-0 flex items-center gap-3"
+              >
+                <MapIcon className="h-4 w-4 text-neutral-400 shrink-0" />
+                <span className="truncate">{result.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {searchError && (
+             <div className="pointer-events-auto bg-red-50 text-red-600 text-xs px-4 py-2 rounded-lg border border-red-100 shadow-sm">
+                 {searchError}
+             </div>
+        )}
+
+        {/* Compact Filters */}
+        <div className="pointer-events-auto w-full overflow-visible">
+            <CompactFilters value={filters} onChange={setFilters} disabled={summaryQuery.isFetching} />
         </div>
 
-        {/* Filters Panel */}
-        <div className="pointer-events-auto rounded-2xl bg-white/95 shadow-xl shadow-neutral-200/50 backdrop-blur-md transition-all hover:bg-white border border-white/20">
-           <div className="px-5 py-4 flex items-center gap-2.5 text-sm font-bold text-neutral-900 border-b border-neutral-100 bg-gradient-to-r from-neutral-50/50 to-transparent rounded-t-2xl">
-              <Filter className="h-4 w-4 text-blue-600" />
-              <span>Filters</span>
-           </div>
-           <div className="p-5 rounded-b-2xl">
-             <FiltersPanel value={filters} onChange={setFilters} disabled={summaryQuery.isFetching} />
-           </div>
-        </div>
+
       </div>
 
       {/* Stats Drawer / Floating Panel */}
@@ -539,13 +708,13 @@ function CrashStatus({
     return <p className="text-sm font-medium text-neutral-400">No crash points mapped.</p>;
   }
   
-  if (query.data.results.length >= 2000) {
+  if (query.data.results.length >= 5000) {
     return (
       <div className="rounded-xl bg-amber-50/80 p-4 text-xs font-medium text-amber-900 border border-amber-100 flex gap-3">
         <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
         <div className="space-y-1">
             <p className="font-bold text-amber-800">High Density Area</p>
-            <p>Showing the latest 2,000 crashes. Zoom in or draw a smaller area for more detail.</p>
+            <p>Showing the latest 5,000 crashes. Zoom in or draw a smaller area for more detail.</p>
         </div>
       </div>
     );
