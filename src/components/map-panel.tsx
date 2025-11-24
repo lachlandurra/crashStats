@@ -44,6 +44,7 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const drawRef = useRef<MapLibreGLDraw | null>(null);
+  const suppressPointClickRef = useRef(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasPolygon, setHasPolygon] = useState(false);
 
@@ -104,11 +105,18 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
 
     map.on("moveend", updateBounds);
 
-    const handleUpdate = () => {
+    const handleUpdate = (e: any) => {
       const collection = draw.getAll();
       const feature = collection.features.at(-1) as Feature<Polygon | MultiPolygon> | undefined;
       onPolygonChange(feature ?? null);
       setHasPolygon(!!feature);
+      // Suppress accidental point clicks fired by the double-click that finishes drawing
+      if (e?.type === 'draw.create') {
+        suppressPointClickRef.current = true;
+        setTimeout(() => {
+          suppressPointClickRef.current = false;
+        }, 250);
+      }
       
       // If we just finished drawing, switch back to simple_select
       if ((draw as any).getMode() === 'draw_polygon') {
@@ -214,7 +222,7 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
 
     const onLayerClick = (e: any) => {
       // Prevent clicking points while drawing
-      if (isDrawing) return;
+      if (isDrawing || suppressPointClickRef.current) return;
 
       if (!e.features || !e.features.length) return;
 
