@@ -105,7 +105,7 @@ export function MapPanel({ onPolygonChange, onBoundsChange, crashesGeoJson, onPo
 
     map.on("moveend", updateBounds);
 
-    const handleUpdate = (e: any) => {
+    const handleUpdate = (e?: any) => {
       const collection = draw.getAll();
       const feature = collection.features.at(-1) as Feature<Polygon | MultiPolygon> | undefined;
       onPolygonChange(feature ?? null);
