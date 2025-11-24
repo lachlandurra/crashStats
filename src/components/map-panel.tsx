@@ -400,7 +400,6 @@ function addOrUpdateCrashLayer(map: Map, geojson: FeatureCollection<Point>) {
         "Fatal accident", "#dc2626",           // Red
         "Serious injury accident", "#ea580c",   // Orange
         "Other injury accident", "#f59e0b",     // Amber
-        "Non injury accident", "#10b981",       // Emerald
         "#6b7280"  // Gray fallback
       ],
       "circle-opacity": 0.75,

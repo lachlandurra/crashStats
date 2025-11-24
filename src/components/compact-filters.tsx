@@ -12,7 +12,6 @@ const SEVERITY_OPTIONS = [
   { label: 'Fatal accident', color: 'bg-rose-500', textColor: 'text-rose-700', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
   { label: 'Serious injury accident', color: 'bg-orange-500', textColor: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
   { label: 'Other injury accident', color: 'bg-amber-400', textColor: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
-  { label: 'Non injury accident', color: 'bg-emerald-400', textColor: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
 ];
 
 type CompactFiltersProps = {

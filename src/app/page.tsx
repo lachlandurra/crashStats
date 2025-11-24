@@ -1157,8 +1157,7 @@ function toGeoJson(response?: CrashesResponse | null) {
   const severityRank: Record<string, number> = {
     'Fatal accident': 4,
     'Serious injury accident': 3,
-    'Other injury accident': 2,
-    'Non injury accident': 1,
+    'Other injury accident': 2
   };
 
   // Group crashes by location (lat/lon)
