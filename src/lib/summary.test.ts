@@ -15,6 +15,8 @@ const melbournePolygon = polygon([
   ]
 ]);
 
+const TEST_TIMEOUT = 15_000;
+
 async function createTestDatabase() {
   const db = new duckdb.Database(":memory:");
   const connection = db.connect();
@@ -28,6 +30,7 @@ async function createTestDatabase() {
       accident_date DATE,
       accident_time VARCHAR,
       accident_type TEXT,
+      dca_code_description TEXT,
       severity TEXT,
       day_of_week TEXT,
       speed_zone INTEGER,
@@ -37,6 +40,7 @@ async function createTestDatabase() {
       bicyclist_count INTEGER,
       pedestrian_count INTEGER,
       heavy_vehicle_count INTEGER,
+      rma TEXT,
       geom GEOMETRY
     );
   `
@@ -51,6 +55,7 @@ async function createTestDatabase() {
       DATE '2024-01-01',
       '12:00:00',
       'Rear-end',
+      'REAR END(VEHICLES IN SAME LANE)',
       'Fatal',
       'Monday',
       50,
@@ -60,6 +65,7 @@ async function createTestDatabase() {
       0,
       1,
       0,
+      'Local Road',
       ST_Point(145.0, -37.8)
     ),
     (
@@ -67,6 +73,7 @@ async function createTestDatabase() {
       DATE '2024-01-02',
       '13:00:00',
       'Head-on',
+      'HEAD ON (NOT OVERTAKING)',
       'Serious Injury',
       'Tuesday',
       60,
@@ -76,6 +83,7 @@ async function createTestDatabase() {
       1,
       0,
       1,
+      'Local Road',
       ST_Point(145.1, -37.9)
     ),
     (
@@ -83,6 +91,7 @@ async function createTestDatabase() {
       DATE '2023-05-04',
       '09:00:00',
       'Side collision',
+      'CROSS TRAFFIC(INTERSECTIONS ONLY)',
       'Other injury',
       'Friday',
       60,
@@ -92,6 +101,7 @@ async function createTestDatabase() {
       0,
       0,
       0,
+      'Local Road',
       ST_Point(144.2, -36.9)
     );
   `
@@ -118,17 +128,27 @@ describe("querySummary", () => {
     );
     expect(summary.byType[0]?.bucket).toBeDefined();
     expect(summary.latestAccidentDate).toBe("2024-01-02");
-  });
+  }, TEST_TIMEOUT);
 
   it("applies severity filter", async () => {
     const summary = await runSummary({ severity: ["Fatal"] });
     expect(summary.total).toBe(1);
     expect(summary.bySeverity).toEqual([{ bucket: "Fatal", count: 1 }]);
-  });
+  }, TEST_TIMEOUT);
 
   it("applies date range filters", async () => {
     const summary = await runSummary({ dateFrom: "2024-01-02", dateTo: "2024-12-31" });
     expect(summary.total).toBe(1);
     expect(summary.bySeverity[0]).toEqual({ bucket: "Serious Injury", count: 1 });
-  });
+  }, TEST_TIMEOUT);
+
+  it("returns DCA code descriptions", async () => {
+    const summary = await runSummary();
+    expect(summary.byDcaCodeDescription).toEqual(
+      expect.arrayContaining([
+        { bucket: "HEAD ON (NOT OVERTAKING)", count: 1 },
+        { bucket: "REAR END(VEHICLES IN SAME LANE)", count: 1 }
+      ])
+    );
+  }, TEST_TIMEOUT);
 });

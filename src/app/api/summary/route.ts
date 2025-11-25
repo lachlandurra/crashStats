@@ -82,6 +82,10 @@ function sanitizeFilters(filters?: SummaryFilters): SummaryFilters | undefined {
     payload.dateTo = filters.dateTo;
   }
 
+  if (filters.localRoadsOnly === true) {
+    payload.localRoadsOnly = true;
+  }
+
   if (filters.severity?.length) {
     payload.severity = Array.from(
       new Set(

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { subYears, subMonths, format } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
-import { Calendar, ChevronDown, X } from 'lucide-react';
+import { Calendar, ChevronDown, X, Route } from 'lucide-react';
 import { getLatestDataDate } from '@/lib/data-meta';
 import type { FiltersState } from './filters-panel';
 
@@ -46,6 +46,10 @@ export function CompactFilters({ value, onChange, disabled }: CompactFiltersProp
     const exists = value.severity.includes(option);
     const next = exists ? value.severity.filter((item) => item !== option) : [...value.severity, option];
     onChange({ ...value, severity: next });
+  };
+
+  const toggleLocalRoads = () => {
+    onChange({ ...value, localRoadsOnly: !value.localRoadsOnly });
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -307,6 +311,22 @@ export function CompactFilters({ value, onChange, disabled }: CompactFiltersProp
             </button>
           );
         })}
+      </div>
+
+      {/* Row 3: Road Authority */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide mask-linear-fade">
+        <button
+          onClick={toggleLocalRoads}
+          disabled={disabled}
+          className={`shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+            value.localRoadsOnly
+              ? 'bg-sky-50 text-sky-700 border-sky-200 shadow-sm'
+              : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+          } disabled:opacity-50`}
+        >
+          <Route className="h-3.5 w-3.5" />
+          Local roads only
+        </button>
       </div>
     </div>
   );

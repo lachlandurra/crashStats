@@ -7,6 +7,7 @@ export type SummaryFilters = {
   severity?: string[];
   dateFrom?: string;
   dateTo?: string;
+  localRoadsOnly?: boolean;
 };
 
 export type SummaryBucket = {
@@ -27,7 +28,9 @@ export type SummaryResult = {
     pedestrians: number;
     cyclists: number;
     heavyVehicles: number;
+    motorcyclists: number;
   };
+  byDcaCodeDescription: SummaryBucket[];
   latestAccidentDate: string | null;
 };
 
@@ -107,14 +110,24 @@ export async function querySummary(options: QueryOptions): Promise<SummaryResult
         ORDER BY count DESC;`,
         [...params]
       );
-      const totals = await all<{ persons: number; pedestrians: number; cyclists: number; heavyVehicles: number }>(
+      const byDcaCodeDescription = await all<{ dca_code_description: string | null; count: number }>(
+        connection,
+        `${cte}
+        SELECT COALESCE(dca_code_description, 'Unknown') AS dca_code_description, COUNT(*) AS count
+        FROM filtered
+        GROUP BY 1
+        ORDER BY count DESC, dca_code_description ASC;`,
+        [...params]
+      );
+      const totals = await all<{ persons: number; pedestrians: number; cyclists: number; heavyVehicles: number; motorcyclists: number }>(
         connection,
         `${cte}
         SELECT
           COALESCE(SUM(total_persons), 0) AS persons,
           COALESCE(SUM(pedestrian_count), 0) AS pedestrians,
           COALESCE(SUM(bicyclist_count), 0) AS cyclists,
-          COALESCE(SUM(heavy_vehicle_count), 0) AS heavyVehicles
+          COALESCE(SUM(heavy_vehicle_count), 0) AS heavyVehicles,
+          COALESCE(SUM(motorcyclist_count), 0) AS motorcyclists
         FROM filtered;`,
         [...params]
       );
@@ -127,11 +140,13 @@ export async function querySummary(options: QueryOptions): Promise<SummaryResult
         byRoadGeometry: formatBuckets(byRoadGeometry, "bucket_value"),
         byDayOfWeek: formatBuckets(byDayOfWeek, "bucket_value"),
         byLightCondition: formatBuckets(byLightCondition, "bucket_value"),
+        byDcaCodeDescription: formatBuckets(byDcaCodeDescription, "dca_code_description"),
         totals: {
           persons: Number(totals[0]?.persons ?? 0),
           pedestrians: Number(totals[0]?.pedestrians ?? 0),
           cyclists: Number(totals[0]?.cyclists ?? 0),
-          heavyVehicles: Number(totals[0]?.heavyVehicles ?? 0)
+          heavyVehicles: Number(totals[0]?.heavyVehicles ?? 0),
+          motorcyclists: Number(totals[0]?.motorcyclists ?? 0)
         },
         latestAccidentDate: latest[0]?.latest ?? null
       };
@@ -167,6 +182,10 @@ function buildFilterClause(filters: SummaryFilters | undefined) {
   if (filters?.dateTo) {
     clauses.push("accident_date <= CAST(? AS DATE)");
     params.push(filters.dateTo);
+  }
+
+  if (filters?.localRoadsOnly) {
+    clauses.push("TRIM(UPPER(rma)) = 'LOCAL ROAD'");
   }
 
   const severityValues = uniq(

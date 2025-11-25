@@ -124,6 +124,7 @@ SELECT
   ) AS accident_date,
   ACCIDENT_TIME AS accident_time,
   ACCIDENT_TYPE AS accident_type,
+  DCA_CODE_DESCRIPTION AS dca_code_description,
   SEVERITY AS severity,
   DAY_OF_WEEK AS day_of_week,
   TRY_CAST(NULLIF(TRIM(REGEXP_EXTRACT(SPEED_ZONE, '([0-9]+)')), '') AS INTEGER) AS speed_zone,
@@ -148,7 +149,8 @@ SELECT
   TRY_CAST(NULLIF(TRIM(NO_OF_VEHICLES), '') AS INTEGER) AS no_of_vehicles,
   TRY_CAST(NULLIF(TRIM(PASSENGERVEHICLE), '') AS INTEGER) AS passenger_vehicle_count,
   TRY_CAST(NULLIF(TRIM(MOTORCYCLE), '') AS INTEGER) AS motorcycle_count,
-  TRY_CAST(NULLIF(TRIM(PT_VEHICLE), '') AS INTEGER) AS public_transport_vehicle_count
+  TRY_CAST(NULLIF(TRIM(PT_VEHICLE), '') AS INTEGER) AS public_transport_vehicle_count,
+  RMA AS rma
 FROM staging
 WHERE TRY_CAST(LONGITUDE AS DOUBLE) IS NOT NULL
   AND TRY_CAST(LATITUDE AS DOUBLE) IS NOT NULL

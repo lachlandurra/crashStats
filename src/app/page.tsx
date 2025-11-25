@@ -16,6 +16,7 @@ type SummaryResponse = {
   total: number;
   bySeverity: SummaryBucket[];
   byType: SummaryBucket[];
+  byDcaCodeDescription: SummaryBucket[];
   bySpeedZone: SummaryBucket[];
   byRoadGeometry: SummaryBucket[];
   byDayOfWeek: SummaryBucket[];
@@ -25,6 +26,7 @@ type SummaryResponse = {
     pedestrians: number;
     cyclists: number;
     heavyVehicles: number;
+    motorcyclists: number;
   };
   latestAccidentDate: string | null;
   dataVersion: string | null;
@@ -37,8 +39,10 @@ type CrashesResponse = {
 type CrashPoint = {
   accidentNo: string;
   accidentDate: string | null;
+  accidentTime: string | null;
   severity: string | null;
   accidentType: string | null;
+  dcaCodeDescription: string | null;
   lon: number;
   lat: number;
   speedZone: string | null;
@@ -76,14 +80,16 @@ function PointStats({ point }: { point: { count: number; severity: string; crash
         {point.crashes.map((crash) => (
           <div key={crash.accidentNo} className="rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-blue-100 group">
             <div className="flex items-start justify-between gap-4 mb-3">
-              <div className="space-y-1">
-                <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                  crash.severity === 'Fatal accident' ? 'bg-red-100 text-red-700' :
-                  crash.severity === 'Serious injury accident' ? 'bg-orange-100 text-orange-700' :
-                  crash.severity === 'Other injury accident' ? 'bg-amber-100 text-amber-700' :
-                  'bg-emerald-100 text-emerald-700'
-                }`}>
-                  {crash.severity?.replace(' accident', '')}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                    crash.severity === 'Fatal accident' ? 'bg-red-100 text-red-700' :
+                    crash.severity === 'Serious injury accident' ? 'bg-orange-100 text-orange-700' :
+                    crash.severity === 'Other injury accident' ? 'bg-amber-100 text-amber-700' :
+                    'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {crash.severity?.replace(' accident', '')}
+                  </div>
                 </div>
                 <h4 className="font-bold text-neutral-900 text-sm leading-tight">{crash.accidentType}</h4>
               </div>
@@ -91,11 +97,31 @@ function PointStats({ point }: { point: { count: number; severity: string; crash
                 #{crash.accidentNo}
               </div>
             </div>
+
+            <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2 shadow-[0_1px_0_rgba(59,130,246,0.15)] flex gap-2">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                  <span
+                    title="DCA code indicates the movements the involved road users were making when the crash occurred"
+                    className="cursor-help decoration-dotted underline underline-offset-2"
+                  >
+                    DCA
+                  </span>
+                </p>
+                <p className="text-sm font-bold text-neutral-900 leading-snug">
+                  {formatDcaDescription(crash.dcaCodeDescription || '')}
+                </p>
+              </div>
+            </div>
             
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-neutral-600 mb-3">
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-neutral-400" />
-                <span>{formatDate(crash.accidentDate)}</span>
+                <span className="flex items-center gap-1">
+                  <span>{formatDate(crash.accidentDate)}</span>
+                  <span className="text-neutral-300">•</span>
+                  <span>{formatTime(crash.accidentTime)}</span>
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-neutral-400" />
@@ -166,6 +192,17 @@ function formatDate(dateStr: string | null) {
   } catch {
     return dateStr;
   }
+}
+
+function formatTime(timeStr: string | null) {
+  if (!timeStr) return 'Unknown time';
+  const digits = timeStr.replace(/\D/g, '');
+  if (digits.length >= 4) {
+    const hours = digits.slice(0, 2).padStart(2, '0');
+    const minutes = digits.slice(2, 4).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+  return timeStr;
 }
 
 function AnimatedArrow() {
@@ -290,14 +327,10 @@ function AnimatedArrow() {
 export default function HomePage() {
   const [polygon, setPolygon] = useState<Feature<Polygon | MultiPolygon> | null>(null);
   const [bounds, setBounds] = useState<Feature<Polygon> | null>(null);
-  const [filters, setFilters] = useState<FiltersState>({ severity: [] });
+  const [filters, setFilters] = useState<FiltersState>({ severity: [], localRoadsOnly: true });
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'area' | 'point'>('area');
-  const [selectedPoint, setSelectedPoint] = useState<{
-    count: number;
-    severity: string;
-    crashes: CrashPoint[];
-  } | null>(null);
+  const [selectedLocationKey, setSelectedLocationKey] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; lat: number; lon: number; bbox?: [number, number, number, number] }>>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -327,7 +360,8 @@ export default function HomePage() {
     if (polygon) {
       setIsStatsOpen(true);
       setViewMode('area');
-      setSelectedPoint(null); // Clear selected point when drawing new polygon
+      setViewMode('area');
+      setSelectedLocationKey(null); // Clear selected point when drawing new polygon
     }
   }, [polygon]);
 
@@ -405,22 +439,19 @@ export default function HomePage() {
   const crashesQuery = useCrashes(polygon, bounds, filters);
   const crashGeoJson = useMemo(() => toGeoJson(crashesQuery.data), [crashesQuery.data]);
 
-  const handlePointClick = (data: any) => {
-    let crashes = data.crashes;
-    if (typeof crashes === 'string') {
-        try {
-            crashes = JSON.parse(crashes);
-        } catch (e) {
-            console.error('Failed to parse crashes', e);
-            crashes = [];
-        }
-    }
+  const selectedPoint = useMemo(() => {
+    if (!selectedLocationKey || !crashGeoJson) return null;
+    const feature = crashGeoJson.features.find((f) => f.properties.locationKey === selectedLocationKey);
+    if (!feature) return null;
+    return {
+      count: feature.properties.count,
+      severity: feature.properties.severity || 'Unknown',
+      crashes: feature.properties.crashes,
+    };
+  }, [selectedLocationKey, crashGeoJson]);
 
-    setSelectedPoint({
-      count: data.count,
-      severity: data.severity,
-      crashes: crashes
-    });
+  const handlePointClick = (data: any) => {
+    setSelectedLocationKey(data.locationKey);
     setViewMode('point');
     setIsStatsOpen(true);
   };
@@ -780,19 +811,24 @@ function SummarySection({ query, hasPolygon }: { query: SummaryQuery; hasPolygon
     byDayOfWeek: query.data.byDayOfWeek,
     byLightCondition: query.data.byLightCondition
   };
+  const topDcaDescriptions = query.data.byDcaCodeDescription;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Hero Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2 rounded-3xl bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="col-span-3 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 p-4 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 p-4 opacity-10">
                 <TrendingUp className="h-24 w-24" />
             </div>
-            <p className="text-blue-100 text-sm font-medium mb-1">Total Crashes</p>
-            <p className="text-5xl font-bold tracking-tight">{formatNumber(total)}</p>
-            <div className="mt-4 flex items-center gap-2 text-xs font-medium text-blue-200 bg-blue-500/20 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
-                <span>Latest: {latestAccidentDate ? formatDate(latestAccidentDate) : 'N/A'}</span>
+            <div className="flex items-end justify-between relative z-10">
+                <div>
+                    <p className="text-blue-100 text-xs font-medium mb-0.5">Total Crashes</p>
+                    <p className="text-3xl font-bold tracking-tight leading-none">{formatNumber(total)}</p>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-medium text-blue-200 bg-blue-500/20 px-2 py-1 rounded-md backdrop-blur-sm">
+                    <span>Latest: {latestAccidentDate ? formatDate(latestAccidentDate) : 'N/A'}</span>
+                </div>
             </div>
         </div>
         
@@ -820,6 +856,13 @@ function SummarySection({ query, hasPolygon }: { query: SummaryQuery; hasPolygon
             value={query.data.totals.heavyVehicles} 
             color="bg-purple-50 text-purple-600"
         />
+        <StatTile 
+            icon={<Bike className="h-4 w-4" />} 
+            label="Motorcycles" 
+            value={query.data.totals.motorcyclists} 
+            color="bg-amber-50 text-amber-600"
+        /> 
+
       </div>
 
       <div className="space-y-8">
@@ -829,6 +872,10 @@ function SummarySection({ query, hasPolygon }: { query: SummaryQuery; hasPolygon
 
         <Section title="Crash Types">
              <BucketList buckets={byType.slice(0, 5)} colorClass="bg-blue-500" />
+        </Section>
+
+        <Section title="Crash Configurations (DCA)">
+             <BucketList buckets={topDcaDescriptions.slice(0, 6)} colorClass="bg-indigo-500" formatter={formatDcaDescription} />
         </Section>
       </div>
       
@@ -903,13 +950,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function StatTile({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
     return (
-        <div className="flex flex-col justify-between rounded-2xl bg-white p-4 shadow-sm border border-neutral-100 transition-transform hover:scale-[1.02]">
-            <div className={`w-fit rounded-lg p-2 ${color} mb-3`}>
+        <div className="flex flex-col justify-between rounded-xl bg-white p-3 shadow-sm border border-neutral-100 transition-transform hover:scale-[1.02]">
+            <div className={`w-fit rounded-md p-1.5 ${color} mb-2`}>
                 {icon}
             </div>
             <div>
-                <p className="text-2xl font-bold text-neutral-900">{formatNumber(value)}</p>
-                <p className="text-xs font-medium text-neutral-500">{label}</p>
+                <p className="text-xl font-bold text-neutral-900">{formatNumber(value)}</p>
+                <p className="text-[10px] font-medium text-neutral-500">{label}</p>
             </div>
         </div>
     );
@@ -1070,15 +1117,24 @@ function useSummary(polygon: Feature<Polygon | MultiPolygon> | null, bounds: Fea
       severity: filters.severity,
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
+      localRoadsOnly: filters.localRoadsOnly ? true : undefined,
     };
-    if (sanitizedFilters.severity.length || sanitizedFilters.dateFrom || sanitizedFilters.dateTo) {
+    if (sanitizedFilters.severity.length || sanitizedFilters.dateFrom || sanitizedFilters.dateTo || sanitizedFilters.localRoadsOnly) {
       payload.filters = sanitizedFilters;
     }
     return payload;
-  }, [polygon, bounds, filters.severity, filters.dateFrom, filters.dateTo]);
+  }, [polygon, bounds, filters.severity, filters.dateFrom, filters.dateTo, filters.localRoadsOnly]);
 
   return useQuery<SummaryResponse, Error>({
-    queryKey: ['summary', polygon ? 'polygon' : 'bounds', polygon ? JSON.stringify(polygon.geometry) : (bounds ? JSON.stringify(bounds.geometry) : 'all'), filters.dateFrom ?? '', filters.dateTo ?? '', severityKey],
+    queryKey: [
+      'summary',
+      polygon ? 'polygon' : 'bounds',
+      polygon ? JSON.stringify(polygon.geometry) : (bounds ? JSON.stringify(bounds.geometry) : 'all'),
+      filters.dateFrom ?? '',
+      filters.dateTo ?? '',
+      severityKey,
+      filters.localRoadsOnly ? 'local-only' : 'all-roads'
+    ],
     queryFn: async () => {
       const response = await fetch('/api/summary', {
         method: 'POST',
@@ -1107,15 +1163,24 @@ function useCrashes(polygon: Feature<Polygon | MultiPolygon> | null, _bounds: Fe
       severity: filters.severity,
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
+      localRoadsOnly: filters.localRoadsOnly ? true : undefined,
     };
-    if (sanitizedFilters.severity.length || sanitizedFilters.dateFrom || sanitizedFilters.dateTo) {
+    if (sanitizedFilters.severity.length || sanitizedFilters.dateFrom || sanitizedFilters.dateTo || sanitizedFilters.localRoadsOnly) {
       payload.filters = sanitizedFilters;
     }
     return payload;
-  }, [polygon, filters.severity, filters.dateFrom, filters.dateTo]);
+  }, [polygon, filters.severity, filters.dateFrom, filters.dateTo, filters.localRoadsOnly]);
 
   return useQuery<CrashesResponse, Error>({
-    queryKey: ['crashes', polygon ? 'polygon' : 'all', polygon ? JSON.stringify(polygon.geometry) : 'all', filters.dateFrom ?? '', filters.dateTo ?? '', severityKey],
+    queryKey: [
+      'crashes',
+      polygon ? 'polygon' : 'all',
+      polygon ? JSON.stringify(polygon.geometry) : 'all',
+      filters.dateFrom ?? '',
+      filters.dateTo ?? '',
+      severityKey,
+      filters.localRoadsOnly ? 'local-only' : 'all-roads'
+    ],
     queryFn: async () => {
       const response = await fetch('/api/crashes', {
         method: 'POST',
@@ -1148,10 +1213,23 @@ function formatSpeedZone(bucket: string | null, includeUnit = true) {
   return bucket;
 }
 
+function formatDcaDescription(bucket: string) {
+  if (!bucket) return 'Unknown';
+  const trimmed = bucket.trim();
+  if (!trimmed || trimmed.toLowerCase() === 'unknown') {
+    return 'Unknown';
+  }
+  const cleaned = trimmed.replace(/\s+/g, ' ');
+  const sentence = cleaned.toLowerCase();
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+}
+
 function toGeoJson(response?: CrashesResponse | null) {
   if (!response?.results?.length) {
     return null;
   }
+
+
 
   // Define severity ranking (higher number = more severe)
   const severityRank: Record<string, number> = {
@@ -1162,6 +1240,7 @@ function toGeoJson(response?: CrashesResponse | null) {
 
   // Group crashes by location (lat/lon)
   const locationMap = new Map<string, {
+    locationKey: string;
     count: number;
     mostSevere: string | null;
     severityRank: number;
@@ -1185,6 +1264,7 @@ function toGeoJson(response?: CrashesResponse | null) {
       }
     } else {
       locationMap.set(key, {
+        locationKey: key,
         count: 1,
         mostSevere: point.severity,
         severityRank: pointSeverityRank,
@@ -1201,6 +1281,7 @@ function toGeoJson(response?: CrashesResponse | null) {
     features: Array.from(locationMap.values()).map((location) => ({
       type: 'Feature',
       properties: {
+        locationKey: location.locationKey,
         count: location.count,
         severity: location.mostSevere,
         severityRank: location.severityRank,

@@ -8,8 +8,10 @@ import type { SummaryFilters } from "./summary";
 export type CrashPoint = {
   accidentNo: string;
   accidentDate: string | null;
+  accidentTime: string | null;
   severity: string | null;
   accidentType: string | null;
+  dcaCodeDescription: string | null;
   lon: number;
   lat: number;
   speedZone: string | null;
@@ -55,8 +57,10 @@ export async function queryCrashes(options: CrashQueryOptions): Promise<CrashPoi
       return rows.map((row) => ({
         accidentNo: String(row.accidentNo ?? row.accidentno ?? ""),
         accidentDate: row.accidentDate ?? null,
+        accidentTime: row.accidentTime ?? null,
         severity: row.severity ?? null,
         accidentType: row.accidentType ?? null,
+        dcaCodeDescription: row.dcaCodeDescription ?? null,
         lon: Number(row.lon),
         lat: Number(row.lat),
         speedZone: row.speedZone ?? null,
@@ -100,7 +104,9 @@ function buildFilteredCte({
   const columns = `
     crashes.accident_no AS accidentNo,
     crashes.accident_date::VARCHAR AS accidentDate,
+    crashes.accident_time AS accidentTime,
     crashes.accident_type AS accidentType,
+    crashes.dca_code_description AS dcaCodeDescription,
     crashes.severity,
     crashes.speed_zone AS speedZone,
     crashes.road_geometry AS roadGeometry,
@@ -179,6 +185,10 @@ function buildFilterClause(filters: SummaryFilters | undefined) {
   if (filters?.dateTo) {
     clauses.push("crashes.accident_date <= CAST(? AS DATE)");
     params.push(filters.dateTo);
+  }
+
+  if (filters?.localRoadsOnly) {
+    clauses.push("TRIM(UPPER(crashes.rma)) = 'LOCAL ROAD'");
   }
 
   const severityValues = Array.from(

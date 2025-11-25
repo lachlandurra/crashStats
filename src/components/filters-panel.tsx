@@ -2,13 +2,14 @@
 
 import { subYears, format } from 'date-fns';
 import { DateRangePicker } from './date-range-picker';
-import { Calendar, AlertCircle, RotateCcw } from 'lucide-react';
+import { Calendar, AlertCircle, RotateCcw, Route } from 'lucide-react';
 import { getLatestDataDate } from '@/lib/data-meta';
 
 export type FiltersState = {
   dateFrom?: string;
   dateTo?: string;
   severity: string[];
+  localRoadsOnly?: boolean;
 };
 
 const SEVERITY_OPTIONS = [
@@ -30,6 +31,10 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
     onChange({ ...value, severity: next });
   };
 
+  const toggleLocalRoads = () => {
+    onChange({ ...value, localRoadsOnly: !value.localRoadsOnly });
+  };
+
   const handleDateRangeChange = (range: { from?: Date; to?: Date } | undefined) => {
     onChange({
       ...value,
@@ -39,7 +44,7 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
   };
 
   const clearFilters = () => {
-    onChange({ severity: [], dateFrom: undefined, dateTo: undefined });
+    onChange({ severity: [], dateFrom: undefined, dateTo: undefined, localRoadsOnly: true });
   };
 
   const handleLast5Years = () => {
@@ -66,7 +71,7 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
   const fromDate = value.dateFrom ? new Date(value.dateFrom) : undefined;
   const toDate = value.dateTo ? new Date(value.dateTo) : undefined;
   
-  const hasActiveFilters = value.severity.length > 0 || value.dateFrom || value.dateTo;
+  const hasActiveFilters = value.severity.length > 0 || value.dateFrom || value.dateTo || value.localRoadsOnly;
 
   return (
     <div className="space-y-4">
@@ -156,6 +161,30 @@ export function FiltersPanel({ value, onChange, disabled }: FiltersPanelProps) {
             </span>
           </div>
         )}
+      </div>
+
+      {/* Local Roads */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-600 shadow-sm">
+            <Route className="h-3.5 w-3.5 text-white" />
+          </div>
+          <h3 className="text-sm font-bold text-neutral-800 tracking-tight">Road Authority</h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={toggleLocalRoads}
+            disabled={disabled}
+            className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              value.localRoadsOnly
+                ? 'bg-sky-50 text-sky-700 border-sky-200 shadow-sm'
+                : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300 hover:text-neutral-900 hover:shadow-sm'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            Local roads only
+          </button>
+        </div>
       </div>
     </div>
   );
