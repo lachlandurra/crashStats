@@ -15,7 +15,8 @@ export type FiltersState = {
 const SEVERITY_OPTIONS = [
   { label: 'Fatal accident', color: 'from-rose-500 to-red-600', textColor: 'text-rose-700', bgColor: 'bg-rose-50', borderColor: 'border-rose-400', hoverBg: 'hover:bg-rose-100' },
   { label: 'Serious injury accident', color: 'from-orange-500 to-amber-600', textColor: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-400', hoverBg: 'hover:bg-orange-100' },
-  { label: 'Other injury accident', color: 'from-amber-400 to-yellow-500', textColor: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-400', hoverBg: 'hover:bg-amber-100' },
+  { label: 'Other injury accident', color: 'from-emerald-600 to-green-700', textColor: 'text-emerald-800', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-400', hoverBg: 'hover:bg-emerald-100' },
+  { label: 'Non injury accident', color: 'from-green-200 to-emerald-300', textColor: 'text-emerald-700', bgColor: 'bg-green-50', borderColor: 'border-green-200', hoverBg: 'hover:bg-green-100' },
 ];
 
 type FiltersPanelProps = {

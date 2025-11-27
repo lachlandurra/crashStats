@@ -80,17 +80,18 @@ function PointStats({ point }: { point: { count: number; severity: string; crash
         {point.crashes.map((crash) => (
           <div key={crash.accidentNo} className="rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-blue-100 group">
             <div className="flex items-start justify-between gap-4 mb-3">
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                    crash.severity === 'Fatal accident' ? 'bg-red-100 text-red-700' :
-                    crash.severity === 'Serious injury accident' ? 'bg-orange-100 text-orange-700' :
-                    crash.severity === 'Other injury accident' ? 'bg-amber-100 text-amber-700' :
-                    'bg-emerald-100 text-emerald-700'
-                  }`}>
-                    {crash.severity?.replace(' accident', '')}
-                  </div>
-                </div>
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                        crash.severity === 'Fatal accident' ? 'bg-red-100 text-red-700' :
+                        crash.severity === 'Serious injury accident' ? 'bg-orange-100 text-orange-700' :
+                        crash.severity === 'Other injury accident' ? 'bg-emerald-200 text-emerald-800' :
+                        crash.severity === 'Non injury accident' ? 'bg-green-50 text-emerald-700' :
+                        'bg-neutral-100 text-neutral-700'
+                      }`}>
+                        {crash.severity?.replace(' accident', '')}
+                      </div>
+                    </div>
                 <h4 className="font-bold text-neutral-900 text-sm leading-tight">{crash.accidentType}</h4>
               </div>
               <div className="text-[10px] font-mono text-neutral-400 bg-neutral-50 px-2 py-1 rounded-md">
@@ -674,7 +675,8 @@ export default function HomePage() {
                        <div className="flex -space-x-1.5">
                           <div className="h-2.5 w-2.5 rounded-full bg-[#dc2626] ring-1 ring-white"></div>
                           <div className="h-2.5 w-2.5 rounded-full bg-[#ea580c] ring-1 ring-white"></div>
-                          <div className="h-2.5 w-2.5 rounded-full bg-[#f59e0b] ring-1 ring-white"></div>
+                          <div className="h-2.5 w-2.5 rounded-full bg-[#15803d] ring-1 ring-white"></div>
+                          <div className="h-2.5 w-2.5 rounded-full bg-[#86efac] ring-1 ring-white"></div>
                        </div>
                     )}
                     <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
@@ -695,11 +697,11 @@ export default function HomePage() {
                     <span className="text-xs font-medium text-neutral-700">Serious injury</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <div className="h-3 w-3 rounded-full bg-[#f59e0b] border border-white shadow-sm"></div>
+                    <div className="h-3 w-3 rounded-full bg-[#15803d] border border-white shadow-sm"></div>
                     <span className="text-xs font-medium text-neutral-700">Other injury</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <div className="h-3 w-3 rounded-full bg-[#10b981] border border-white shadow-sm"></div>
+                    <div className="h-3 w-3 rounded-full bg-[#86efac] border border-white shadow-sm"></div>
                     <span className="text-xs font-medium text-neutral-700">Non injury</span>
                   </div>
                   <div className="pt-2 mt-2 border-t border-neutral-100">
