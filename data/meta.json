@@ -1,7 +1,7 @@
 {
   "sourceUrl": "https://opendata.transport.vic.gov.au/dataset/bb77800e-1857-4edc-bf9e-e188437a1c8e/resource/5df1f373-0c90-48f5-80e1-7b2a35507134/download/victorian_road_crash_data.csv",
-  "downloadedAt": "2025-11-25T00:28:35.679Z",
-  "rowCount": 4541,
-  "latestAccidentDate": "2025-03-28",
-  "dataVersion": "2025-03-28"
+  "downloadedAt": "2026-08-03T23:49:58.614Z",
+  "rowCount": 4759,
+  "latestAccidentDate": "2025-11-29",
+  "dataVersion": "2025-11-29"
 }
